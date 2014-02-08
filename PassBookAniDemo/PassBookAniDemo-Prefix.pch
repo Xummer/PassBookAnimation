@@ -14,3 +14,7 @@
     #import <UIKit/UIKit.h>
     #import <Foundation/Foundation.h>
 #endif
+
+
+#define __DEVICE_OS_VERSION_7_0 ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0)
+#define __DEVICE_SCREEN_SIZE_5 ([UIScreen instancesRespondToSelector:@selector(currentMode)] ? CGSizeEqualToSize(CGSizeMake(640, 1136), [[UIScreen mainScreen] currentMode].size) : NO)

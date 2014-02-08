@@ -19,6 +19,10 @@
 		C1492EEE18360FC30070C84F /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C1492ED618360FC30070C84F /* UIKit.framework */; };
 		C1492EF618360FC30070C84F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C1492EF418360FC30070C84F /* InfoPlist.strings */; };
 		C1492EF818360FC30070C84F /* PassBookAniDemoTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C1492EF718360FC30070C84F /* PassBookAniDemoTests.m */; };
+		C176384A18A5C95D00E8A2E0 /* PBPassGroupStackView.m in Sources */ = {isa = PBXBuildFile; fileRef = C176384418A5C95D00E8A2E0 /* PBPassGroupStackView.m */; };
+		C176384B18A5C95D00E8A2E0 /* PBPassGroupView.m in Sources */ = {isa = PBXBuildFile; fileRef = C176384618A5C95D00E8A2E0 /* PBPassGroupView.m */; };
+		C176384C18A5C95D00E8A2E0 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C176384818A5C95D00E8A2E0 /* ViewController.m */; };
+		C176384D18A5C95D00E8A2E0 /* ViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = C176384918A5C95D00E8A2E0 /* ViewController.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,6 +52,13 @@
 		C1492EF318360FC30070C84F /* PassBookAniDemoTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "PassBookAniDemoTests-Info.plist"; sourceTree = "<group>"; };
 		C1492EF518360FC30070C84F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1492EF718360FC30070C84F /* PassBookAniDemoTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PassBookAniDemoTests.m; sourceTree = "<group>"; };
+		C176384318A5C95D00E8A2E0 /* PBPassGroupStackView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PBPassGroupStackView.h; sourceTree = "<group>"; };
+		C176384418A5C95D00E8A2E0 /* PBPassGroupStackView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PBPassGroupStackView.m; sourceTree = "<group>"; };
+		C176384518A5C95D00E8A2E0 /* PBPassGroupView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PBPassGroupView.h; sourceTree = "<group>"; };
+		C176384618A5C95D00E8A2E0 /* PBPassGroupView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PBPassGroupView.m; sourceTree = "<group>"; };
+		C176384718A5C95D00E8A2E0 /* ViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		C176384818A5C95D00E8A2E0 /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		C176384918A5C95D00E8A2E0 /* ViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ViewController.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -109,6 +120,10 @@
 			children = (
 				C1492EE118360FC30070C84F /* AppDelegate.h */,
 				C1492EE218360FC30070C84F /* AppDelegate.m */,
+				C176384218A5C95D00E8A2E0 /* PassbookView */,
+				C176384718A5C95D00E8A2E0 /* ViewController.h */,
+				C176384818A5C95D00E8A2E0 /* ViewController.m */,
+				C176384918A5C95D00E8A2E0 /* ViewController.xib */,
 				C1492EE418360FC30070C84F /* Images.xcassets */,
 				C1492ED918360FC30070C84F /* Supporting Files */,
 			);
@@ -142,6 +157,17 @@
 				C1492EF418360FC30070C84F /* InfoPlist.strings */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		C176384218A5C95D00E8A2E0 /* PassbookView */ = {
+			isa = PBXGroup;
+			children = (
+				C176384318A5C95D00E8A2E0 /* PBPassGroupStackView.h */,
+				C176384418A5C95D00E8A2E0 /* PBPassGroupStackView.m */,
+				C176384518A5C95D00E8A2E0 /* PBPassGroupView.h */,
+				C176384618A5C95D00E8A2E0 /* PBPassGroupView.m */,
+			);
+			path = PassbookView;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -220,6 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C1492EDD18360FC30070C84F /* InfoPlist.strings in Resources */,
+				C176384D18A5C95D00E8A2E0 /* ViewController.xib in Resources */,
 				C1492EE518360FC30070C84F /* Images.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -239,8 +266,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C176384B18A5C95D00E8A2E0 /* PBPassGroupView.m in Sources */,
 				C1492EE318360FC30070C84F /* AppDelegate.m in Sources */,
+				C176384A18A5C95D00E8A2E0 /* PBPassGroupStackView.m in Sources */,
 				C1492EDF18360FC30070C84F /* main.m in Sources */,
+				C176384C18A5C95D00E8A2E0 /* ViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -441,6 +471,7 @@
 				C1492EFD18360FC30070C84F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		C1492EFE18360FC30070C84F /* Build configuration list for PBXNativeTarget "PassBookAniDemoTests" */ = {
 			isa = XCConfigurationList;
@@ -449,6 +480,7 @@
 				C1492F0018360FC30070C84F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

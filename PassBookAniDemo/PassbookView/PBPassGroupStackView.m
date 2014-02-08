@@ -1,26 +1,30 @@
 //
-//  PBAnimationView.m
+//  PBPassGroupStackView.m
 //  IBTDemo
 //
 //  Created by Xummer on 13-10-29.
 //  Copyright (c) 2013年 Xummer. All rights reserved.
 //
 
-#import "PBAnimationView.h"
+#import "PBPassGroupStackView.h"
 
 #define PB_ITEM_START_Y 44
 
 CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 
-@interface PBAnimationView ()<PBContainerDelegate>
+@interface PBPassGroupStackView ()<PBPassGroupDelegate>
+@property(weak, nonatomic) id<PBPassGroupDataSource> dataSource;
+
 @property(nonatomic, strong) NSMutableDictionary *accelerationsOfSubViews;
+@property(nonatomic, strong) NSMutableArray *acceleratViews;
 @property(nonatomic, strong) NSMutableArray *pbItems;
+@property(nonatomic, copy) NSMutableArray *reuseableItems;
 
 - (void)_init;
 
 @end
 
-@implementation PBAnimationView   
+@implementation PBPassGroupStackView   
 
 // designated init
 - (void)_init {
@@ -28,14 +32,18 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
     [self setAlwaysBounceVertical:YES];
     [self setCanCancelContentTouches:YES];
     self.accelerationsOfSubViews = [[NSMutableDictionary alloc] init];
+    self.acceleratViews = [NSMutableArray array];
     self.pbItems = [[NSMutableArray alloc] init];
 }
 
-- (id)initWithFrame:(CGRect)frame andItemsContent:(NSMutableArray *)iContents {
+- (id)initWithFrame:(CGRect)frame
+         datasource:(id<PBPassGroupDataSource>)dataSource;
+{
     self = [super initWithFrame:frame];
     if (self) {
         [self _init];
-        [self updateWithItemsContent:iContents];
+        [self setDataSource:dataSource];
+        [self reloadData];
     }
     return self;
 }
@@ -64,6 +72,68 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
     return self;
 }
 
+- (void)reloadData {
+    
+    if (![_dataSource respondsToSelector:@selector(numberOfPassbookViews)]) {
+        NSLog(@"Errot _dataSource can't responds to |numberOfPassbookViews|");
+    }
+    
+    NSUInteger icCount = [_dataSource numberOfPassbookViews];
+    if (icCount <= 0) {
+        NSLog(@"icCount not more than Zero");
+        return;
+    }
+    
+    if (![_dataSource respondsToSelector:@selector(defaultOffsetYAtStackIndex:)]) {
+        NSLog(@"Errot _dataSource can't responds to |defaultOffsetYAtStackIndex:|");
+        return;
+    }
+    
+    if (![_dataSource respondsToSelector:@selector(contentViewsAtStackIndex:)]) {
+        NSLog(@"Errot _dataSource can't responds to |contentViewAtStackIndex:|");
+        return;
+    }
+    
+    CGFloat accelerationRate = 1.0f / icCount;
+    
+    [self.acceleratViews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    self.reuseableItems = _pbItems;
+    [_pbItems removeAllObjects];
+    
+    for (NSUInteger i = 0; i < icCount; i ++) {
+        
+        NSArray *contents = [_dataSource contentViewsAtStackIndex:i];
+        
+        PBPassGroupView *cV = [self dequeueReusablePBItemAtIndex:i];
+        
+        [cV setPbDelegate:self];
+        [cV setInBoxIndex:i itemsCount:icCount];
+        [cV updateContents:contents];
+        
+        [_pbItems addObject:cV];
+        [self addSubview:cV
+        withAcceleration:CGPointMake(0, .009f+i*accelerationRate)];
+    }
+}
+
+- (PBPassGroupView *)dequeueReusablePBItemAtIndex:(NSUInteger)index {
+    
+    PBPassGroupView *cV = nil;
+    if ([_reuseableItems count] > index) {
+        cV = _reuseableItems[ index ];
+    }
+    else {
+        NSArray *contents = [_dataSource contentViewsAtStackIndex:index];
+        UIView *subContentView = contents[ 0 ];
+        CGRect frame = subContentView.frame;
+        frame.origin.y = [_dataSource defaultOffsetYAtStackIndex:index];;
+        cV =
+        [[PBPassGroupView alloc] initWithFrame:frame tapEnable:YES];
+    }
+    
+    return cV;
+}
+
 - (void)updateWithItemsContent:(NSMutableArray *)iContents {
     CGRect frame = CGRectMake(0, PB_ITEM_START_Y, 320, 397);
     NSUInteger icCount = [iContents count];
@@ -83,7 +153,7 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
             frame = contentView.frame;
             frame.origin.y = PB_ITEM_START_Y + i*itemGap;
             
-            PBContainerView *cV = [[PBContainerView alloc] initWithFrame:frame];
+            PBPassGroupView *cV = [[PBPassGroupView alloc] initWithFrame:frame];
             [cV setPbDelegate:self];
             [cV setInBoxIndex:i itemsCount:icCount];
             [cV updateContents:subItems];
@@ -108,6 +178,7 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 - (void)addSubview:(UIView *)view withAcceleration:(CGPoint) acceleration {
     // add to super
     [super addSubview:view];
+    [_acceleratViews addObject:view];
     [self setAcceleration:acceleration forView:view];
 }
 
@@ -136,16 +207,24 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 }
 
 - (void)willRemoveSubview:(UIView *)subview {
+    [_acceleratViews removeObject:subview];
     [_accelerationsOfSubViews removeObjectForKey:@((int)subview)];
 }
 
 //====================================================================
 
-- (void)animationToSelect:(PBContainerView *)selectView {
+- (void)animationToSelectWithItemIndex:(NSUInteger)itIndex {
+    if (itIndex < [_pbItems count]) {
+        PBPassGroupView *itemV = (PBPassGroupView *)_pbItems[ itIndex ];
+        [self animationToSelect:itemV];
+    }
+}
+
+- (void)animationToSelect:(PBPassGroupView *)selectView {
     
     NSUInteger inboxIndex = 0;
     for (NSUInteger i = 0; i < [_pbItems count]; i ++) {
-        PBContainerView *itemV = (PBContainerView *)_pbItems[ i ];
+        PBPassGroupView *itemV = (PBPassGroupView *)_pbItems[ i ];
         if (itemV == selectView) {
             [selectView animationToState:kPBOutBox];
         }
@@ -158,7 +237,7 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 
 - (void)animationToDefault {
     for (NSUInteger i = 0; i < [_pbItems count]; i ++) {
-        [(PBContainerView *)_pbItems[ i ] animationToState:kPBDefualt];
+        [(PBPassGroupView *)_pbItems[ i ] animationToState:kPBDefault];
     }
 }
 
@@ -166,7 +245,7 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    for (UIView *v in self.subviews) {
+    for (UIView *v in self.acceleratViews) {
         // get acceleration
         CGPoint accelecration = [self accelerationForView:v];
         
@@ -182,9 +261,9 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 }
 
 #pragma mark - PBItemDelegate
-- (void)handleTap:(UITapGestureRecognizer *)tap item:(PBContainerView *)itemV; {
-    switch (itemV.itemState) {
-        case kPBDefualt:
+- (void)handleTap:(UITapGestureRecognizer *)tap item:(PBPassGroupView *)itemV; {
+    switch (itemV.presentationState) {
+        case kPBDefault:
             [self animationToSelect:itemV];
             break;
         case kPBInBox:
