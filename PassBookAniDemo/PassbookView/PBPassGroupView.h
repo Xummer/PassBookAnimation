@@ -7,8 +7,9 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PBPassFrontFaceView.h"
 
-#define TOP_GAP             0
+#define TOP_GAP             (__DEVICE_SCREEN_SIZE_5 ? 27 : 5)
 #define BOTTOM_GAP          5
 #define BOX_BANNER_HEIGHT   50
 #define BOX_GAP             5
@@ -21,8 +22,8 @@ typedef NS_ENUM(NSInteger, PBPassState) {
 
 @protocol PBPassGroupDelegate;
 @interface PBPassGroupView : UIView
-@property(nonatomic, assign) PBPassState presentationState;
-@property(nonatomic, assign) id<PBPassGroupDelegate> pbDelegate;
+@property (assign, nonatomic) PBPassState presentationState;
+@property (assign, nonatomic) id<PBPassGroupDelegate> pbDelegate;
 
 - (id)initWithFrame:(CGRect)frame tapEnable:(BOOL)enable;
 - (void)enableSubViewsTap:(BOOL)eableTap;
@@ -38,12 +39,14 @@ typedef NS_ENUM(NSInteger, PBPassState) {
 - (void)handleTap:(UITapGestureRecognizer *)tap item:(PBPassGroupView *)itemV;
 @end
 
-@protocol PBPassViewTapDelegate;
 @interface PBPassView : UIView
-@property(nonatomic, assign) NSUInteger subIndex;
-@property(nonatomic, assign) NSUInteger subCount;
-@property(nonatomic, strong) UIView <PBPassViewTapDelegate> *contentView;
-- (id)initWithOrigin:(CGPoint)theOrigin content:(UIView <PBPassViewTapDelegate> *)theView;
+@property (assign, nonatomic) NSUInteger subIndex;
+@property (assign, nonatomic) NSUInteger subCount;
+@property (strong, nonatomic) PBPassFrontFaceView *frontFaceView;;
+
+- (id)initWithOrigin:(CGPoint)theOrigin
+          customView:(UIView <PBPassViewTapDelegate> *)theView
+             backImg:(UIImage *)backImg;
 - (void)toDefaultWithStackIndex:(NSUInteger)sIndex currentPage:(NSUInteger)cPage;
 @end
 
@@ -51,8 +54,4 @@ typedef NS_ENUM(NSInteger, PBPassState) {
 
 @optional
 - (BOOL)sholdHandleItemTap:(UITapGestureRecognizer *)tap item:(PBPassView *)itemV;
-@end
-
-@interface PBScrollView : UIScrollView
-
 @end

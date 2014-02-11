@@ -13,12 +13,12 @@
 CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 
 @interface PBPassGroupStackView ()<PBPassGroupDelegate>
-@property(weak, nonatomic) id<PBPassGroupDataSource> dataSource;
+@property(weak, nonatomic) id<PBPassGroupStackDataSource> dataSource;
 
-@property(nonatomic, strong) NSMutableDictionary *accelerationsOfSubViews;
-@property(nonatomic, strong) NSMutableArray *acceleratViews;
-@property(nonatomic, strong) NSMutableArray *pbItems;
-@property(nonatomic, copy) NSMutableArray *reuseableItems;
+@property(strong, nonatomic) NSMutableDictionary *accelerationsOfSubViews;
+@property(strong, nonatomic) NSMutableArray *accelerateViews;
+@property(strong, nonatomic) NSMutableArray *passPileViews;
+@property(copy, nonatomic) NSMutableArray *reuseablePassPileViews;
 
 - (void)_init;
 
@@ -32,12 +32,12 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
     [self setAlwaysBounceVertical:YES];
     [self setCanCancelContentTouches:YES];
     self.accelerationsOfSubViews = [[NSMutableDictionary alloc] init];
-    self.acceleratViews = [NSMutableArray array];
-    self.pbItems = [[NSMutableArray alloc] init];
+    self.accelerateViews = [NSMutableArray array];
+    self.passPileViews = [[NSMutableArray alloc] init];
 }
 
 - (id)initWithFrame:(CGRect)frame
-         datasource:(id<PBPassGroupDataSource>)dataSource;
+         datasource:(id<PBPassGroupStackDataSource>)dataSource;
 {
     self = [super initWithFrame:frame];
     if (self) {
@@ -74,11 +74,11 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 
 - (void)reloadData {
     
-    if (![_dataSource respondsToSelector:@selector(numberOfPassbookViews)]) {
-        NSLog(@"Errot _dataSource can't responds to |numberOfPassbookViews|");
+    if (![_dataSource respondsToSelector:@selector(numberOfPassGroupViews)]) {
+        NSLog(@"Errot _dataSource can't responds to |numberOfPassGroupViews|");
     }
     
-    NSUInteger icCount = [_dataSource numberOfPassbookViews];
+    NSUInteger icCount = [_dataSource numberOfPassGroupViews];
     if (icCount <= 0) {
         NSLog(@"icCount not more than Zero");
         return;
@@ -89,41 +89,41 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
         return;
     }
     
-    if (![_dataSource respondsToSelector:@selector(contentViewsAtStackIndex:)]) {
+    if (![_dataSource respondsToSelector:@selector(passViewsAtStackIndex:)]) {
         NSLog(@"Errot _dataSource can't responds to |contentViewAtStackIndex:|");
         return;
     }
     
     CGFloat accelerationRate = 1.0f / icCount;
     
-    [self.acceleratViews makeObjectsPerformSelector:@selector(removeFromSuperview)];
-    self.reuseableItems = _pbItems;
-    [_pbItems removeAllObjects];
+    [self.accelerateViews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+    self.reuseablePassPileViews = _passPileViews;
+    [_passPileViews removeAllObjects];
     
     for (NSUInteger i = 0; i < icCount; i ++) {
         
-        NSArray *contents = [_dataSource contentViewsAtStackIndex:i];
+        NSArray *contents = [_dataSource passViewsAtStackIndex:i];
         
-        PBPassGroupView *cV = [self dequeueReusablePBItemAtIndex:i];
+        PBPassGroupView *cV = [self dequeueReusablePassPileViewAtIndex:i];
         
         [cV setPbDelegate:self];
         [cV setInBoxIndex:i itemsCount:icCount];
         [cV updateContents:contents];
         
-        [_pbItems addObject:cV];
+        [_passPileViews addObject:cV];
         [self addSubview:cV
         withAcceleration:CGPointMake(0, .009f+i*accelerationRate)];
     }
 }
 
-- (PBPassGroupView *)dequeueReusablePBItemAtIndex:(NSUInteger)index {
+- (PBPassGroupView *)dequeueReusablePassPileViewAtIndex:(NSUInteger)index {
     
     PBPassGroupView *cV = nil;
-    if ([_reuseableItems count] > index) {
-        cV = _reuseableItems[ index ];
+    if ([_reuseablePassPileViews count] > index) {
+        cV = _reuseablePassPileViews[ index ];
     }
     else {
-        NSArray *contents = [_dataSource contentViewsAtStackIndex:index];
+        NSArray *contents = [_dataSource passViewsAtStackIndex:index];
         UIView *subContentView = contents[ 0 ];
         CGRect frame = subContentView.frame;
         frame.origin.y = [_dataSource defaultOffsetYAtStackIndex:index];;
@@ -142,7 +142,7 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
     }
     
     CGFloat minHeight = 0;
-    CGFloat itemGap = (self.frame.size.height-PB_ITEM_START_Y) / icCount;
+    CGFloat itemGap = (CGRectGetHeight(self.frame)-PB_ITEM_START_Y) / icCount;
     CGFloat accelerationRate = 1.0f / icCount;
     
     for (NSUInteger i = 0; i < icCount; i ++) {
@@ -159,7 +159,7 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
             [cV updateContents:subItems];
             
             
-            [_pbItems addObject:cV];
+            [_passPileViews addObject:cV];
             [self addSubview:cV
              withAcceleration:CGPointMake(0, .009f+i*accelerationRate)];
             
@@ -178,7 +178,7 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 - (void)addSubview:(UIView *)view withAcceleration:(CGPoint) acceleration {
     // add to super
     [super addSubview:view];
-    [_acceleratViews addObject:view];
+    [_accelerateViews addObject:view];
     [self setAcceleration:acceleration forView:view];
 }
 
@@ -207,37 +207,37 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 }
 
 - (void)willRemoveSubview:(UIView *)subview {
-    [_acceleratViews removeObject:subview];
+    [_accelerateViews removeObject:subview];
     [_accelerationsOfSubViews removeObjectForKey:@((int)subview)];
 }
 
 //====================================================================
 
-- (void)animationToSelectWithItemIndex:(NSUInteger)itIndex {
-    if (itIndex < [_pbItems count]) {
-        PBPassGroupView *itemV = (PBPassGroupView *)_pbItems[ itIndex ];
-        [self animationToSelect:itemV];
+- (void)animationToSelectWithPassIndex:(NSUInteger)psIndex {
+    if (psIndex < [_passPileViews count]) {
+        PBPassGroupView *passV = (PBPassGroupView *)_passPileViews[ psIndex ];
+        [self animationToSelect:passV];
     }
 }
 
 - (void)animationToSelect:(PBPassGroupView *)selectView {
     
     NSUInteger inboxIndex = 0;
-    for (NSUInteger i = 0; i < [_pbItems count]; i ++) {
-        PBPassGroupView *itemV = (PBPassGroupView *)_pbItems[ i ];
-        if (itemV == selectView) {
+    for (NSUInteger i = 0; i < [_passPileViews count]; i ++) {
+        PBPassGroupView *passV = (PBPassGroupView *)_passPileViews[ i ];
+        if (passV == selectView) {
             [selectView animationToState:kPBOutBox];
         }
         else {
-            [itemV setInBoxIndex:inboxIndex ++ itemsCount:[_pbItems count]];
-            [itemV animationToState:kPBInBox];
+            [passV setInBoxIndex:inboxIndex ++ itemsCount:[_passPileViews count]];
+            [passV animationToState:kPBInBox];
         }
     }
 }
 
 - (void)animationToDefault {
-    for (NSUInteger i = 0; i < [_pbItems count]; i ++) {
-        [(PBPassGroupView *)_pbItems[ i ] animationToState:kPBDefault];
+    for (NSUInteger i = 0; i < [_passPileViews count]; i ++) {
+        [(PBPassGroupView *)_passPileViews[ i ] animationToState:kPBDefault];
     }
 }
 
@@ -245,7 +245,7 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    for (UIView *v in self.acceleratViews) {
+    for (UIView *v in self.accelerateViews) {
         // get acceleration
         CGPoint accelecration = [self accelerationForView:v];
         
@@ -261,10 +261,10 @@ CGPoint const PBDefaultAcceleration = (CGPoint){1.0f, 1.0f};
 }
 
 #pragma mark - PBItemDelegate
-- (void)handleTap:(UITapGestureRecognizer *)tap item:(PBPassGroupView *)itemV; {
-    switch (itemV.presentationState) {
+- (void)handleTap:(UITapGestureRecognizer *)tap item:(PBPassGroupView *)passV; {
+    switch (passV.presentationState) {
         case kPBDefault:
-            [self animationToSelect:itemV];
+            [self animationToSelect:passV];
             break;
         case kPBInBox:
             [self animationToDefault];

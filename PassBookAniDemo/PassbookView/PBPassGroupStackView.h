@@ -12,25 +12,25 @@
 /// default acceleration Behaviour is CGGoint{1.0f, 1.0f}
 extern CGPoint const PBDefaultAcceleration;
 
-@protocol PBPassGroupDataSource;
+@protocol PBPassGroupStackDataSource;
 @interface PBPassGroupStackView : UIScrollView
 
 - (void)updateWithItemsContent:(NSMutableArray *)iContents;
 
 - (id)initWithFrame:(CGRect)frame
-         datasource:(id<PBPassGroupDataSource>)dataSource;
+         datasource:(id<PBPassGroupStackDataSource>)dataSource;
 - (void)reloadData;
 
-- (void)animationToSelectWithItemIndex:(NSUInteger)itIndex;
+- (void)animationToSelectWithPassIndex:(NSUInteger)psIndex;
 - (void)animationToDefault;
 
 @end
 
-@protocol PBPassGroupDataSource <NSObject>
+@protocol PBPassGroupStackDataSource <NSObject>
 
 @required
-- (NSUInteger)numberOfPassbookViews;
+- (NSUInteger)numberOfPassGroupViews;
 - (CGFloat)defaultOffsetYAtStackIndex:(NSUInteger)index;
-- (NSArray *)contentViewsAtStackIndex:(NSUInteger)index;
+- (NSArray *)passViewsAtStackIndex:(NSUInteger)index;
 
 @end

@@ -28,13 +28,13 @@
     
     NSUInteger _displayIndex;
     
-//    PBPassState _toState;
+    PBPassState _toState;
 }
 
-@property(nonatomic, strong) UIView *fakeTapMask;
-@property(nonatomic, strong) UIScrollView *contentScroll;
-@property(nonatomic, strong) NSMutableArray *subItems;
-@property(nonatomic, strong) UIPageControl *pageControl;
+@property(strong, nonatomic) UIView *fakeTapMask;
+@property(strong, nonatomic) UIScrollView *contentScroll;
+@property(strong, nonatomic) NSMutableArray *passViews;
+@property(strong, nonatomic) UIPageControl *pageControl;
 @end
 
 @implementation PBPassGroupView
@@ -65,17 +65,9 @@
     return self;
 }
 
-- (void)setFrame:(CGRect)frame {
-    [super setFrame:frame];
-    
-    // reset _contentScroll subView size
-//    CGRect subViewRect = _contentScroll.frame;
-//    subViewRect.size.width = frame.size.width;
-//    [_contentScroll setFrame:subViewRect];
-}
-
 - (void)setPresentationState:(PBPassState)itemState {
     _presentationState = itemState;
+    _toState = itemState;
     BOOL enableScroll = NO;
     switch (itemState) {
         case kPBDefault:
@@ -120,16 +112,16 @@
 - (void)updateContents:(NSArray *)data {
     _outboxY = TOP_GAP;
     
-    // remove all subItems
-    for (PBPassView *subView in _subItems) {
-        [subView removeFromSuperview];
+    // remove all passViews
+    for (PBPassView *pView in _passViews) {
+        [pView removeFromSuperview];
     }
-    [self.subItems removeAllObjects];
+    [self.passViews removeAllObjects];
     
-    // reload subItems
+    // reload passViews
     NSUInteger iCount = [data count];
     [_pageControl setNumberOfPages:iCount];
-    for (NSUInteger i = 0; i < [data count]; i ++) {
+    for (NSUInteger i = 0; i < iCount; i ++) {
         NSUInteger index = iCount-1 - i;
         if ([data[ index ] isKindOfClass:[UIView class]]) {
             UIView <PBPassViewTapDelegate> *conV = data[ index ];
@@ -141,11 +133,13 @@
             };
             PBPassView *iV =
             [[PBPassView alloc] initWithOrigin:origin
-                                       content:conV];
+                                    customView:conV
+                                       backImg:nil];
+            iV.frontFaceView.isOnlyShowTop = i < iCount-1;
             
             iV.subIndex = index;
             iV.subCount = iCount;
-            [_subItems addObject:iV];
+            [_passViews addObject:iV];
             [_contentScroll addSubview:iV];
         }
     }
@@ -194,7 +188,7 @@
     
     
     [self setPresentationState:kPBDefault];
-    self.subItems = [[NSMutableArray alloc] init];
+    self.passViews = [[NSMutableArray alloc] init];
     
     // fake tap mask view
     
@@ -214,10 +208,10 @@
 
 - (void)tapHandle:(UITapGestureRecognizer *)tap {
     // -- Before Tap
-    if ([_subItems count] > 0 && _displayIndex < [_subItems count]) {
-        PBPassView *item = _subItems[ _displayIndex ];
-        if ([item.contentView respondsToSelector:@selector(sholdHandleItemTap:item:)]) {
-            if (![item.contentView sholdHandleItemTap:tap item:item]) {
+    if ([_passViews count] > 0 && _displayIndex < [_passViews count]) {
+        PBPassView *item = _passViews[ _displayIndex ];
+        if ([item.frontFaceView.bodyCustomView respondsToSelector:@selector(sholdHandleItemTap:item:)]) {
+            if (![item.frontFaceView.bodyCustomView sholdHandleItemTap:tap item:item]) {
                 return;
             }
         }
@@ -246,6 +240,8 @@
         return;
     }
     
+    _toState = state;
+    
     CGRect frame = _defaultRect;
     frame.size.height += PB_PAGECONTROL_HEIGHT;
     
@@ -255,6 +251,13 @@
                 [(UIScrollView *)self.superview setScrollEnabled:YES];
             }
             frame.origin.y = _defaultRect.origin.y;
+            if ([_passViews count] > 1) {
+                for (PBPassView *pv in _passViews) {
+                    if ([[pv.superview subviews] lastObject] != pv) {
+                        pv.frontFaceView.isOnlyShowTop = YES;
+                    }
+                }
+            }
             break;
         case kPBInBox:
             frame.origin.y = _inboxY;
@@ -274,6 +277,11 @@
             frame.origin.y = _outboxY;
             if ([self.superview isKindOfClass:[UIScrollView class]]) {
                 [(UIScrollView *)self.superview setScrollEnabled:NO];
+            }
+            if ([_passViews count] > 1) {
+                for (PBPassView *pv in _passViews) {
+                    pv.frontFaceView.isOnlyShowTop = NO;
+                }
             }
             
             break;
@@ -295,6 +303,7 @@
                          
                          if (finished) {
                              weakSelf.presentationState = state;
+                             _toState = state;
                          }
                          
                          [weakSelf setUserInteractionEnabled:YES];
@@ -364,14 +373,14 @@
                         options:UIViewAnimationOptionCurveEaseIn
                      animations:^{
                          CGRect itemRect = _defaultRect;
-                         for (NSUInteger i = 0; i < [_subItems count]; i++) {
+                         for (NSUInteger i = 0; i < [_passViews count]; i++) {
                              
-                             if ([_subItems[ i ] isKindOfClass:[PBPassView class]]) {
-                                 PBPassView *iV = _subItems[ i ];
+                             if ([_passViews[ i ] isKindOfClass:[PBPassView class]]) {
+                                 PBPassView *iV = _passViews[ i ];
                                  itemRect = iV.frame;
                                  
                                  itemRect.origin = CGPointMake(PB_SCROLL_GAP + iV.subIndex*CGRectGetWidth(_contentScroll.bounds), 0);
-                                 NSLog(@"%@", NSStringFromCGRect(itemRect));
+//                                 NSLog(@"%@", NSStringFromCGRect(itemRect));
                                  [iV setFrame:itemRect];
                              }
                          }
@@ -405,16 +414,17 @@
 
 #pragma mark - UIScrollView Delegate
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    CGFloat tmpPage = scrollView.contentOffset.x/self.bounds.size.width;
-    if (tmpPage > 0 && tmpPage < [_subItems count]) {
+    CGFloat tmpPage = scrollView.contentOffset.x/CGRectGetWidth(self.bounds);
+    
+    if (tmpPage > 0 && tmpPage < [_passViews count]) {
         _displayIndex = tmpPage;
         _pageControl.currentPage = _displayIndex;
         
         // Bring current page to front
-        NSUInteger stackIndex = [_subItems count] - 1 - _displayIndex;
-        if ([_subItems[ stackIndex ] isKindOfClass:[PBPassView class]]) {
-            PBPassView *itemV = (PBPassView *)_subItems[ stackIndex ];
-            [itemV.superview bringSubviewToFront:itemV ];
+        NSUInteger stackIndex = [_passViews count] - 1 - _displayIndex;
+        if ([_passViews[ stackIndex ] isKindOfClass:[PBPassView class]]) {
+            PBPassView *itemV = (PBPassView *)_passViews[ stackIndex ];
+            [itemV.superview bringSubviewToFront:itemV];
         }
     }
 }
@@ -432,7 +442,8 @@
 
 @implementation PBPassView
 
-- (id)initWithOrigin:(CGPoint)theOrigin content:(UIView <PBPassViewTapDelegate> *)theView {
+- (id)initWithOrigin:(CGPoint)theOrigin customView:(UIView <PBPassViewTapDelegate> *)theView backImg:(UIImage *)backImg
+{
     CGRect frame = theView.bounds;
     theView.frame = frame;
     frame.origin = theOrigin;
@@ -440,16 +451,19 @@
     self = [super initWithFrame:frame];
     if (self) {
         _defaultRect = frame;
-        self.contentView = theView;
-        [self setAutoresizingMask:
-         UIViewAutoresizingFlexibleWidth |
-         UIViewAutoresizingFlexibleHeight
-         ];
+        self.frontFaceView =
+        [[PBPassFrontFaceView alloc] initWithCustomView:theView backImage:backImg];
         
-        [theView setAutoresizingMask:
-         UIViewAutoresizingFlexibleWidth |
-         UIViewAutoresizingFlexibleHeight
-         ];
+//        [self setAutoresizingMask:
+//         UIViewAutoresizingFlexibleWidth |
+//         UIViewAutoresizingFlexibleHeight
+//         ];
+//        
+//        [theView setAutoresizingMask:
+//         UIViewAutoresizingFlexibleWidth |
+//         UIViewAutoresizingFlexibleHeight
+//         ];
+        
 //        [theView setAutoresizingMask:
 //         UIViewAutoresizingFlexibleLeftMargin |
 //         UIViewAutoresizingFlexibleWidth |
@@ -458,7 +472,7 @@
 //         UIViewAutoresizingFlexibleHeight |
 //         UIViewAutoresizingFlexibleBottomMargin
 //         ];
-        [self addSubview:theView];
+        [self addSubview:_frontFaceView];
     }
     return self;
 }
@@ -468,31 +482,6 @@
     frame.origin.x = cPage * (CGRectGetWidth(frame) + 2*PB_SCROLL_GAP) + PB_SCROLL_GAP;
     frame.origin.y = sIndex * PB_SUBITEM_GAP;
     [self setFrame:frame];
-}
-
-@end
-
-
-#pragma mark - PBScrollView
-@interface PBScrollView ()
-
-@end
-
-@implementation PBScrollView
-
-- (void)setFrame:(CGRect)frame {
-    [super setFrame:frame];
-
-    // reset subView size
-    CGRect subViewRect;
-    for (NSUInteger i = 0; i < [self subviews].count; i++) {
-        if ([self.subviews[ i ] isKindOfClass:[PBPassView class]]) {
-            PBPassView *iV = self.subviews[ i ];
-            subViewRect = iV.frame;
-            subViewRect.size.width = frame.size.width;
-            [iV setFrame:subViewRect];
-        }
-    }
 }
 
 @end

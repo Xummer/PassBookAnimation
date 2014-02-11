@@ -9,9 +9,9 @@
 #import "ViewController.h"
 #import "PBPassGroupStackView.h"
 
-@interface ViewController () < PBPassGroupDataSource >
-@property(nonatomic, strong) PBPassGroupStackView *passbookView;
-@property(nonatomic, strong) NSMutableArray *pbData;
+@interface ViewController () < PBPassGroupStackDataSource >
+@property(strong, nonatomic) PBPassGroupStackView *passbookView;
+@property(strong, nonatomic) NSMutableArray *pbData;
 
 @end
 
@@ -60,7 +60,7 @@
 - (void)setupPBDataSource {
     NSMutableArray *iContents = [[NSMutableArray alloc] init];
     
-    CGRect frame = CGRectMake(0, 0, 320, __DEVICE_SCREEN_SIZE_5 ? 458 : 370 );
+    CGRect frame = CGRectMake(0, 0, 320, 398 );
     
     NSUInteger subItemsCount = 1;
     NSArray *collors =
@@ -100,6 +100,20 @@
             label.text = [NSString stringWithFormat:@"%d - %d", i+1, j+1];
             [itemV addSubview:label];
             
+            label = [[UILabel alloc] initWithFrame:(CGRect){
+                .origin.x = 0,
+                .origin.y = 10,
+                .size.width =  320,
+                .size.height = 20
+            }];
+            label.backgroundColor = [UIColor clearColor];
+            label.font = [UIFont systemFontOfSize:16];
+            label.textAlignment = NSTextAlignmentCenter;
+            label.textColor = [UIColor whiteColor];
+            label.text = [NSString stringWithFormat:@"Title %d", j+1];
+            [itemV addSubview:label];
+
+            
             if (itemV) {
                 itemV.tag = j;
                 [subItems addObject:itemV];
@@ -114,11 +128,11 @@
 
 
 #pragma mark - PassBook View Delegate
-- (NSUInteger)numberOfPassbookViews {
+- (NSUInteger)numberOfPassGroupViews {
     return [_pbData count];
 }
 
-- (NSArray *)contentViewsAtStackIndex:(NSUInteger)index {
+- (NSArray *)passViewsAtStackIndex:(NSUInteger)index {
     if ([_pbData[ index ] isKindOfClass:[NSArray class]]) {
         return _pbData[ index ];
     }
