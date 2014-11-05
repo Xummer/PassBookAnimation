@@ -9,6 +9,9 @@
 #import "ViewController.h"
 #import "PBPassGroupStackView.h"
 
+#define CARDS_COUNT                 (10) // 15 maybe the max count for display on iPhone 6
+#define CARD_MIN_DISPLAY_HEIGHT     (35)
+
 @interface ViewController () < PBPassGroupStackDataSource >
 @property(strong, nonatomic) PBPassGroupStackView *passbookView;
 @property(strong, nonatomic) NSMutableArray *pbData;
@@ -70,7 +73,7 @@
       [UIColor colorWithRed:46.0f/255.0f green:98.0f/201.0f blue:205.0f/255.0f alpha:1],
       [UIColor colorWithRed:121.0f/255.0f green:210.0f/201.0f blue:210.0f/255.0f alpha:1]
       ];
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < CARDS_COUNT; i++) {
         switch (i) {
             case 2:
                 subItemsCount = 4;
@@ -146,7 +149,7 @@
     UIScreen *screen = [UIScreen mainScreen];
     CGFloat height =
     screen.currentMode.size.height / screen.scale - 64;
-    CGFloat unitGap = height / 4;
+    CGFloat unitGap = MAX((height / CARDS_COUNT),  CARD_MIN_DISPLAY_HEIGHT);
     offsetY = unitGap * sIndex;
     
     return offsetY;
